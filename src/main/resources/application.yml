@@ -7,17 +7,33 @@ spring:
 
   cloud:
     gateway:
-      routes: []
       discovery:
         locator:
           enabled: true
           lower-case-service-id: true
+      routes:
+        - id: auth-service
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=1
 
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: http://localhost:8081/.well-known/jwks.json  # tymczasowo placeholder
+        - id: planner-service
+          uri: lb://PLANNER-SERVICE
+          predicates:
+            - Path=/planner/tasks/**
+          filters:
+            - StripPrefix=1
+ #           - AddRequestHeader=Authorization, #{request.headers['Authorization']}
+
+  spring:
+    security:
+      oauth2:
+        resourceserver:
+          jwt:
+            secret: supersecretkey1234567890supersecretkey
+
 
 eureka:
   client:
@@ -26,3 +42,13 @@ eureka:
     fetch-registry: true
     service-url:
       defaultZone: http://localhost:8761/eureka
+#      defaultZone: http://eureka:8761/eureka
+
+logging:
+  level:
+    root: INFO
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2: DEBUG
+    org.springframework.security.oauth2.server.resource: DEBUG
+    org.springframework.web.reactive: DEBUG
+    reactor.netty.http.server: DEBUG
