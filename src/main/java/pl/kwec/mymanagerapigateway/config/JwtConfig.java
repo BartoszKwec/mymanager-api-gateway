@@ -1,10 +1,13 @@
 package pl.kwec.mymanagerapigateway.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -12,15 +15,34 @@ import javax.crypto.spec.SecretKeySpec;
 @Configuration
 public class JwtConfig {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(JwtConfig.class);
+    private static final String ALGORITHM = "HmacSHA256";
+    private static final int MIN_SECRET_LENGTH = 32;
+
     @Value("${spring.security.oauth2.resourceserver.jwt.secret:supersecretkey1234567890supersecretkey}")
     private String secret;
 
     @Bean
     public ReactiveJwtDecoder reactiveJwtDecoder() {
-        final SecretKey key = new SecretKeySpec(secret.getBytes(), "HmacSHA256");
+        validateSecret();
+        LOGGER.debug("Initializing JWT decoder with secret of length: {}", secret.length());
+
+        final SecretKey key = new SecretKeySpec(secret.getBytes(), ALGORITHM);
         final NimbusReactiveJwtDecoder decoder = NimbusReactiveJwtDecoder.withSecretKey(key)
-                .macAlgorithm(org.springframework.security.oauth2.jose.jws.MacAlgorithm.HS256)
+                .macAlgorithm(MacAlgorithm.HS256)
                 .build();
+
+        LOGGER.info("JWT decoder initialized successfully");
         return decoder;
+    }
+
+    private void validateSecret() {
+        if (secret == null || secret.isEmpty()) {
+            LOGGER.error("JWT secret is not configured");
+            throw new IllegalStateException("JWT secret must be configured via JWT_SECRET environment variable");
+        }
+        if (secret.length() < MIN_SECRET_LENGTH) {
+            LOGGER.warn("JWT secret length is {} bytes, recommended minimum is {} bytes", secret.length(), MIN_SECRET_LENGTH);
+        }
     }
 }

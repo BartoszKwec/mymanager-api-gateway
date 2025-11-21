@@ -25,14 +25,12 @@ spring:
             - Path=/planner/tasks/**
           filters:
             - StripPrefix=1
- #           - AddRequestHeader=Authorization, #{request.headers['Authorization']}
 
-  spring:
-    security:
-      oauth2:
-        resourceserver:
-          jwt:
-            secret: supersecretkey1234567890supersecretkey
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          secret: ${JWT_SECRET:supersecretkey1234567890supersecretkey}
 
 
 eureka:
@@ -47,8 +45,9 @@ eureka:
 logging:
   level:
     root: INFO
-    org.springframework.security: DEBUG
-    org.springframework.security.oauth2: DEBUG
-    org.springframework.security.oauth2.server.resource: DEBUG
-    org.springframework.web.reactive: DEBUG
-    reactor.netty.http.server: DEBUG
+    org.springframework.security: INFO
+    org.springframework.security.oauth2: INFO
+    org.springframework.security.oauth2.server.resource: INFO
+    org.springframework.web.reactive: INFO
+    reactor.netty.http.server: WARN
+    pl.kwec.mymanagerapigateway: DEBUG
