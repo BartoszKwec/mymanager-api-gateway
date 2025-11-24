@@ -3,6 +3,7 @@ package pl.kwec.mymanagerapigateway.filter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
+import pl.kwec.mymanagerapigateway.config.TokenConstants;
 
 import java.util.Map;
 import java.util.Optional;
@@ -10,6 +11,9 @@ import java.util.Optional;
 public final class AuthenticationDetailsExtractor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthenticationDetailsExtractor.class);
+    private static final String AUTH_IS_NULL = "Authentication is null";
+    private static final String DETAILS_NOT_MAP = "Authentication details are not a Map";
+    private static final String MISSING_DETAILS = "Missing required authentication details: userId={}, email={}";
 
     private AuthenticationDetailsExtractor() {
         throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
@@ -17,22 +21,22 @@ public final class AuthenticationDetailsExtractor {
 
     public static Optional<AuthenticationDetails> extract(final Authentication authentication) {
         if (authentication == null) {
-            LOGGER.debug("Authentication is null");
+            LOGGER.debug(AUTH_IS_NULL);
             return Optional.empty();
         }
 
         final Object detailsObj = authentication.getDetails();
         if (!(detailsObj instanceof Map<?, ?> detailsMap)) {
-            LOGGER.debug("Authentication details are not a Map");
+            LOGGER.debug(DETAILS_NOT_MAP);
             return Optional.empty();
         }
 
         final Map<String, Object> details = (Map<String, Object>) detailsMap;
-        final Object userIdObj = details.get("userId");
-        final Object emailObj = details.get("email");
+        final Object userIdObj = details.get(TokenConstants.CLAIM_USER_ID);
+        final Object emailObj = details.get(TokenConstants.CLAIM_EMAIL);
 
         if (userIdObj == null || emailObj == null) {
-            LOGGER.warn("Missing required authentication details: userId={}, email={}", userIdObj, emailObj);
+            LOGGER.warn(MISSING_DETAILS, userIdObj, emailObj);
             return Optional.empty();
         }
 

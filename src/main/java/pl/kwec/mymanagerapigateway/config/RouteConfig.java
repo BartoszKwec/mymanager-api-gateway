@@ -11,12 +11,12 @@ public class RouteConfig {
     @Bean
     public RouteLocator customRouteLocator(final RouteLocatorBuilder builder) {
         return builder.routes()
-                .route("auth_service", r -> r.path("/auth-service/auth/**")
-                        .filters(f -> f.rewritePath("/auth-service/auth/(?<remaining>.*)", "/auth/${remaining}"))
-                        .uri("lb://AUTH-SERVICE"))
-                .route("planner_service", r -> r.path("/planner-service/tasks/**")
-                        .filters(f -> f.rewritePath("/planner-service/tasks/(?<remaining>.*)", "/tasks/${remaining}"))
-                        .uri("lb://PLANNER-SERVICE"))
+                .route(TokenConstants.AUTH_SERVICE_ROUTE_NAME, r -> r.path(TokenConstants.AUTH_SERVICE_PATH_PATTERN)
+                        .filters(f -> f.rewritePath(TokenConstants.AUTH_SERVICE_REWRITE_PATH, TokenConstants.AUTH_SERVICE_REWRITE_REPLACEMENT))
+                        .uri(TokenConstants.AUTH_SERVICE_URI))
+                .route(TokenConstants.PLANNER_SERVICE_ROUTE_NAME, r -> r.path(TokenConstants.PLANNER_SERVICE_PATH_PATTERN)
+                        .filters(f -> f.rewritePath(TokenConstants.PLANNER_SERVICE_REWRITE_PATH, TokenConstants.PLANNER_SERVICE_REWRITE_REPLACEMENT))
+                        .uri(TokenConstants.PLANNER_SERVICE_URI))
                 .build();
     }
 }

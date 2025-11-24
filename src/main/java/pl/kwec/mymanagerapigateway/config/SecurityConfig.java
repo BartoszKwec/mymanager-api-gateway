@@ -24,15 +24,17 @@ import java.util.Map;
 public class SecurityConfig {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SecurityConfig.class);
-    private static final String PUBLIC_PATH_PATTERN = "/auth-service/auth/**";
-    private static final String CORS_ALLOWED_ORIGIN = "http://localhost:5173";
+    private static final String SECURITY_CONFIG_INITIALIZED = "Security configuration initialized";
+    private static final String MISSING_JWT_CLAIMS = "Missing required JWT claims: userId={}, email={}, role={}";
+    private static final String JWT_VALIDATED = "JWT validated for user: {}";
+    private static final String ERROR_PROCESSING_JWT = "Error processing JWT token";
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(final ServerHttpSecurity http) {
         http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(exchanges -> exchanges
-                        .pathMatchers(PUBLIC_PATH_PATTERN).permitAll()
+                        .pathMatchers(TokenConstants.PUBLIC_PATH_PATTERN).permitAll()
                         .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
@@ -41,41 +43,41 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(request -> {
                     final CorsConfiguration config = new CorsConfiguration();
                     config.setAllowCredentials(true);
-                    config.addAllowedOrigin(CORS_ALLOWED_ORIGIN);
-                    config.addAllowedHeader("*");
-                    config.addAllowedMethod("*");
+                    config.addAllowedOrigin(TokenConstants.CORS_ALLOWED_ORIGIN);
+                    config.addAllowedHeader(TokenConstants.CORS_ALLOWED_HEADER);
+                    config.addAllowedMethod(TokenConstants.CORS_ALLOWED_METHOD);
                     return config;
                 }));
 
-        LOGGER.info("Security configuration initialized");
+        LOGGER.info(SECURITY_CONFIG_INITIALIZED);
         return http.build();
     }
 
     private Converter<Jwt, ? extends Mono<? extends AbstractAuthenticationToken>> grantedAuthoritiesExtractor() {
         return jwt -> {
             try {
-                final String userId = jwt.getClaimAsString("userId");
+                final String userId = jwt.getClaimAsString(TokenConstants.CLAIM_USER_ID);
                 final String email = jwt.getSubject();
-                final String role = jwt.getClaimAsString("role");
+                final String role = jwt.getClaimAsString(TokenConstants.CLAIM_ROLE);
 
                 if (userId == null || email == null || role == null) {
-                    LOGGER.warn("Missing required JWT claims: userId={}, email={}, role={}", userId, email, role);
+                    LOGGER.warn(MISSING_JWT_CLAIMS, userId, email, role);
                     return Mono.empty();
                 }
 
-                final List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
+                final List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(TokenConstants.ROLE_PREFIX + role));
 
                 final Map<String, Object> details = Map.of(
-                        "userId", userId,
-                        "email", email
+                        TokenConstants.CLAIM_USER_ID, userId,
+                        TokenConstants.CLAIM_EMAIL, email
                 );
 
-                LOGGER.debug("JWT validated for user: {}", userId);
+                LOGGER.debug(JWT_VALIDATED, userId);
                 return Mono.just(new UsernamePasswordAuthenticationToken(email, null, authorities) {{
                     setDetails(details);
                 }});
             } catch (final Exception e) {
-                LOGGER.error("Error processing JWT token", e);
+                LOGGER.error(ERROR_PROCESSING_JWT, e);
                 return Mono.error(e);
             }
         };

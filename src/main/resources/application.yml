@@ -11,26 +11,12 @@ spring:
         locator:
           enabled: true
           lower-case-service-id: true
-      routes:
-        - id: auth-service
-          uri: lb://AUTH-SERVICE
-          predicates:
-            - Path=/api/auth/**
-          filters:
-            - StripPrefix=1
-
-        - id: planner-service
-          uri: lb://PLANNER-SERVICE
-          predicates:
-            - Path=/planner/tasks/**
-          filters:
-            - StripPrefix=1
 
   security:
     oauth2:
       resourceserver:
         jwt:
-          secret: ${JWT_SECRET:supersecretkey1234567890supersecretkey}
+          secret: f9Jk2Qp8zW3nR7sX1bL6cV0mH4tY9aEf9Jk2Qp8zW3nR7sX1bL6cV0mH4tY9aE
 
 
 eureka:
